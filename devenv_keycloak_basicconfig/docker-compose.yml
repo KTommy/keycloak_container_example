@@ -1,0 +1,68 @@
+####################################################
+# docker-compose for developpment
+# Author  : k-tomohiro
+# Version : 1.0
+# Last modified : 2021/1/22
+####################################################
+
+
+# docker-compose version
+# See https://docs.docker.com/compose/compose-file/compose-file-v3/
+version: '3.8'
+
+
+# Define services
+services:
+
+
+# Apache Httpd Server
+  apache:
+    build:
+      context: ./apache
+      dockerfile: Dockerfile
+    container_name: dev_apache
+    env_file:
+      - ./apache/apache.env
+    hostname: ${APACHE_HOST_NAME}
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - dev_network
+    volumes:
+      - ./apache/htdocs:/usr/local/apache2/htdocs
+    restart: always
+
+
+# Keycloak Server
+  keycloak:
+    build:
+      context: ./keycloak
+    container_name: dev_keycloak
+    env_file:
+      - ./keycloak/keycloak.env
+    hostname: ${KEYCLOAK_HOST_NAME}
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    networks:
+      - dev_network
+    volumes:
+      - ./keycloak/import:/opt/jboss/import
+    restart: always
+    command: >
+      "
+      -b 0.0.0.0
+      -Dkeycloak.migration.action=import
+      -Dkeycloak.migration.provider=singleFile
+      -Dkeycloak.migration.file=/opt/jboss/import/demorealm.json
+      -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+      "
+
+
+# Network settings
+networks:
+  dev_network:
+    name: dev_network
+
+
